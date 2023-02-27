@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+  subquery-node:
+    image: onfinality/subql-node-avalanche:latest
+    restart: always
+    environment:
+      DB_USER: smart_polling_db
+      DB_PASS: wBD65tjsNNC1DyZlN7so
+      DB_DATABASE: postgres
+      DB_HOST: smart-polling.csm7pbmtix4f.ap-south-1.rds.amazonaws.com
+      DB_PORT: 5432
+    volumes:
+      - ./:/app
+        # setup:
+        # - [ "CMD-SHELL", "pg_isready -U postgres" ]
+    command:
+      - -f=/app
+      - --db-schema=app
+      - --disable-historical=false
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/ready" ]
+      interval: 3s
+      timeout: 30s
+      retries: 10
+  graphql-engine:
+    image: onfinality/subql-query:latest
+    ports:
+      - 3001:3000
+    depends_on:
+      "subquery-node":
+        condition: service_healthy
+    restart: always
+    environment:
+      DB_USER: zdexeruser
+      DB_PASS: yc3t3x4j259yabpqhunnegb588svqpd2
+      DB_DATABASE: zdexer
+      DB_HOST: smart-polling.csm7pbmtix4f.ap-south-1.rds.amazonaws.com
+      DB_PORT: 5432
+    command:
+      - --name=app
+      - --playground
+      - --indexer=http://subquery-node:3001

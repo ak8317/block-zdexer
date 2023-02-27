@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  graphql-engine:
+    # image: onfinality/subql-query:latest #error
+    # image: onfinality/subql-query:v1.7.1-5 #error
+    # image: onfinality/subql-query:v1.7.0 #error
+    image: onfinality/subql-query:v1.6.2-2 #error
+    # image: onfinality/subql-query:v1.6.2-1 #working
+    # image: onfinality/subql-query:v1.6.2-0 #working
+    # image: onfinality/subql-query:v1.6.1 #working
+    ports:
+      - 3003:3003
+    # depends_on:
+    #   "postgres":
+    #     condition: service_healthy
+    #   "subquery-node":
+    #     condition: service_healthy
+    #restart: always
+    env_file:
+      - .env
+    environment:
+      DB_USER: ${READ_ONLY_DB_USER}
+      DB_PASS: ${READ_ONLY_DB_PASS}
+      DB_DATABASE: ${READ_ONLY_DB_DATABASE}
+      DB_HOST: ${READ_ONLY_DB_HOST}
+      DB_PORT: ${READ_ONLY_DB_PORT}
+    command:
+      - --name=app
+      - --playground
+      # - --indexer=http://subquery-node:3000
+      - --port=3003

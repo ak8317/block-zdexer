@@ -1,0 +1,83 @@
+version: "3"
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: ./docker/pg-Dockerfile
+    ports:
+      - 5432:5432
+    volumes:
+      - .data/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 15s
+      retries: 5
+
+  subquery-node:
+    # image: lalitkumarzeeve/subql-zeeve:newrelic
+    image: lalitkumarzeeve/subql-newrelic-updated-url-support:v2.0.12
+    # image: lalitkumarzeeve/subql-dockerize:1
+    # image: onfinality/subql-node-avalanche:latest
+    #image: ankit8317/subql-node-avalanche:latest
+    depends_on:
+      "postgres":
+        condition: service_healthy
+    # restart: always
+    env_file:
+      - .env
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+    volumes:
+      - ./:/app
+      # - /home/lalit/c/subquery-zdexer:/app
+    command:
+      - -f=/app
+      - --db-schema=app
+      - --disable-historical=true
+      - --unsafe
+      - --port 3002
+      - --workers=7
+      - --network-endpoint=${API_ENDPOINT_AND_KEY}
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://subquery-node:3000/ready"
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  graphql-engine:
+    image: onfinality/subql-query:latest
+    ports:
+      - 3003:3003
+    depends_on:
+      "postgres":
+        condition: service_healthy
+      "subquery-node":
+        condition: service_healthy
+    # restart: always
+    env_file:
+      - .env
+    environment:
+      DB_USER: ${READ_ONLY_DB_USER}
+      DB_PASS: ${READ_ONLY_DB_PASS}
+      DB_DATABASE: ${READ_ONLY_DB_DATABASE}
+      DB_HOST: ${READ_ONLY_DB_HOST}
+      DB_PORT: ${READ_ONLY_DB_PORT}
+    command:
+      - --name=app
+      - --playground
+      - --indexer=http://subquery-node:3000
+      - --port=3003

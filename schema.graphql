@@ -1,0 +1,116 @@
+# To improve query performance, we strongly suggest adding indexes to any field that you plan to filter or sort by
+# Add the `@index` or `@index(unique: true)` annotation after any non-key field
+# https://academy.subquery.network/build/graphql.html#indexing-by-non-primary-key-field
+
+"""
+You must uncomment the handler in the manifest and mapping to index this
+"""
+type BlockInfo @jsonField {
+  blockExtraData: String
+  extraData: String
+  extDataHash: String
+  logsBloom: String
+  miner: String
+  nonce: String
+  parentHash: String
+  receiptsRoot: String
+  sha3Uncles: String
+  stateRoot: String
+  transactionsRoot: String
+  uncles: [String]
+  transactionCount: Int
+}
+
+type BlockGasInfo @jsonField {
+  blockGasCost: String
+  extDataGasUsed: String
+  gasLimit: String
+  gasUsed: String
+  baseFeePerGas: String
+}
+type BlockEntity @entity {
+  id: ID!
+  hash: String! @index(unique: true)
+  size: BigInt
+  timestamp: Date
+  blockInfo: BlockInfo
+  blockGasInfo: BlockGasInfo
+}
+type TransactionCounter @jsonField {
+  nonce: String
+  transactionIndex: String!
+}
+type TransactionGasInfo @jsonField {
+  gas: String
+  gasPrice: String
+  maxFeePerGas: String
+  maxPriorityFeePerGas: String
+  receipt_effective_gas_price: String
+  receipt_cumulative_gas_used: String
+  receipt_gas_used: String
+}
+type TransactionInfo @jsonField {
+  type: String
+  v: String
+  r: String
+  s: String
+  accessList: [String]
+}
+type TransactionEntity @entity {
+  id: ID!
+  block: BlockEntity!
+  from: String
+  input: String
+  to: String
+  value: BigInt
+  receipt_status: Boolean
+  contractAddress: String
+  transactionInfo: TransactionInfo
+  transactionGasInfo: TransactionGasInfo
+  transactionCounter: TransactionCounter
+}
+
+type LogInfo @jsonField {
+  data: String
+  logIndex: Int!
+}
+type EvmLog @entity {
+  id: ID!
+  transaction: TransactionEntity!
+  address: String! @index
+  blockHeight: Int! @index
+  topics0: String @index
+  topics1: String
+  topics2: String
+  topics3: String
+  removed: Boolean
+  logInfo: LogInfo
+  blockId: Int
+}
+
+type Account @entity {
+  id: ID!
+  erc721Contracts: [String]
+  erc1155Contracts: [String]
+  contracts: [String]
+}
+# """
+# You must uncomment the handler in the manifest and mapping to index this
+# """
+# type ReceiptEntity @entity {
+#   id: ID!
+#   block: BlockEntity!
+#   blockHash: String!
+#   blockNumber: Int!
+#   contractAddress: String
+#   cumulativeGasUsed: BigInt
+#   effectiveGasPrice: BigInt
+#   from: String
+#   gasUsed: BigInt
+#   logsBloom: String
+#   status: Boolean
+#   to: String
+#   transactionHash: String
+#   transactionIndex: Int!
+#   type: String
+# }
